@@ -1,22 +1,29 @@
 # SBSCR Enterprise Router v5
 
-**SBSCR (Semantic-Based Smart Cost Router)** is a high-performance open-source routing engine that achieves **GPT-4 class efficiency** at **zero inference cost**.
+**SBSCR (Semantic-Based Smart Cost Router)** is a high-performance, open-source LLM routing engine designed to optimize inference costs and latency without sacrificing response quality. It achieves GPT-4 class efficiency at zero inference cost by intelligently orchestrating requests across a distributed network of free-tier providers.
 
-By intelligently routing queries between 12+ optimized open models from **Groq**, **Hugging Face**, and **Google**, SBSCR drastically reduces latency while maintaining high accuracy for enterprise workloads.
+This system is built for developers and enterprises who need a scalable, model-agnostic layer that sits between their applications and various LLM providers.
 
 ---
 
-## 🚀 Capabilities
+## System Architecture
 
-- **Semantic Intelligence**: Uses a hybrid Intent Classifier + XGBoost engine to understand query complexity in sub-10ms.
-- **Zero Cost Inference**: Leveraging free-tier endpoints from Groq (Llama 3), HF (DeepSeek), and Google (Gemini) for a commercially viable free stack.
-- **Sub-Second Latency**: "Fast Path" heuristic routing for conversational inputs (~2ms).
-- **Enterprise Reliability**: Automated provider fallback chains (Primary -> Backup -> Safety Net).
-- **OpenAI Compatible**: Fully compliant `/v1/chat/completions` endpoint.
+SBSCR operates as a unified API gateway compatible with the OpenAI specification. When a request is received, it passes through a multi-stage routing pipeline:
 
-## ⚡ Performance Benchmarks
+1.  **Fast Path Heuristics**: Immediate analysis of query patterns. Conversational inputs (greetings, short confirmations) bypass heavy processing for sub-2ms routing.
+2.  **Semantic Intent Classification**: A hybrid engine uses regex-based pattern matching and a DistilBERT (Zero-Shot) classifier to determine the user's intent (e.g., Coding, Mathematics, Creative Writing).
+3.  **Complexity Analysis**: An XGBoost model evaluates the structural complexity of the prompt based on token density, abstract syntax tree (AST) depth for code, and reasoning tokens.
+4.  **Cluster Selection**: Based on intent and complexity, the request is routed to a specific **Model Cluster**:
+    *   `SOTA`: For complex reasoning (Llama 3.3 70B via Groq)
+    *   `Fast Code`: For programming tasks (DeepSeek Coder V2 via Hugging Face)
+    *   `High Performance`: For general knowledge (Mixtral 8x7B)
+    *   `Cheap Chat`: For simple queries (Phi-3, Llama 3 8B)
 
-Evaluated on internal routing efficiency vs standard single-model deployments:
+---
+
+## Performance Benchmarks
+
+The router has been evaluated against direct model access and standard proprietary endpoints.
 
 | Metric | Single Model (GPT-4) | SBSCR (Hybrid) |
 |--------|----------------------|----------------|
@@ -27,117 +34,80 @@ Evaluated on internal routing efficiency vs standard single-model deployments:
 
 ---
 
-## 🚀 Quick Start
+## Deployment Guide
+
+### Prerequisites
+*   Python 3.9+
+*   API Keys for Groq and Hugging Face (both offer generous free tiers)
 
 ### 1. Installation
 
+Clone the repository and install the required dependencies:
+
 ```bash
-git clone https://github.com/your-username/sbscr-router.git
+git clone https://github.com/alphagangs/sbscr-router.git
 cd sbscr-router
 pip install -r requirements.txt
 ```
 
-### 2. Get Free API Keys
+### 2. Configuration
 
-- **Groq**: https://console.groq.com/ (Required)
-- **Hugging Face**: https://huggingface.co/settings/tokens (Required)
-- **Google**: https://makersuite.google.com/ (Optional)
+SBSCR uses environment variables for secure credential management. 
 
-### 3. Configure Environment
+1.  Copy the example configuration file:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Edit `.env` and provide your API keys:
+    *   `GROQ_API_KEY`: Required for high-speed inference.
+    *   `HF_TOKEN`: Required for access to specialized models like DeepSeek.
+    *   `GOOGLE_API_KEY`: Optional, for Gemini integration.
 
-Copy the example env file and add your keys:
-```bash
-cp .env.example .env
-# Edit .env and paste your keys
-```
+### 3. Execution
 
-### 4. Run Server
+Start the routing server. By default, it runs on port 8000.
 
 ```bash
 python serve.py
 ```
 
-Server runs at `http://localhost:8000`.
+### 4. Client Integration
 
----
+Since SBSCR is compliant with the OpenAI API standard, you can integrate it into existing applications by simply changing the `base_url`.
 
-## 🎨 Interactive Demo
-
-**NEW!** Try our stunning glassmorphic chatbot interface to see SBSCR in action:
-
-```bash
-# 1. Start the server
-python serve.py
-
-# 2. Open the demo
-cd demo
-python -m http.server 8080
-# Then visit http://localhost:8080
-```
-
-The demo features:
-- 🎨 **Beautiful glassmorphic UI** with animated gradients
-- 🧠 **Real-time routing visualization** - see which model is selected
-- ⚡ **Live performance metrics** - routing latency, inference time, cost savings
-- 📊 **Model tier indicators** - SOTA, HIGH, CODE, FAST
-
-Perfect for showing reviewers! See [demo/README.md](demo/README.md) for details.
-
----
-
-## 🛠️ Usage
-
-### Using OpenAI Client (Python)
+**Python Example:**
 
 ```python
 import openai
 
 client = openai.OpenAI(
     base_url="http://localhost:8000/v1",
-    api_key="sk-dummy" # Key is ignored by router, but required by client
+    api_key="sbscr-key" # The router handles authentication with providers
 )
 
 response = client.chat.completions.create(
-    model="sbscr-auto", # Let router decide
-    messages=[{"role": "user", "content": "Write a python script to scrape a website."}]
+    model="sbscr-auto", # Automatically routes based on complexity
+    messages=[{"role": "user", "content": "Explain the significance of the CAP theorem."}]
 )
 
 print(response.choices[0].message.content)
 ```
 
-### Using Curl
+---
 
-```bash
-curl http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "sbscr-auto",
-    "messages": [{"role": "user", "content": "Explain quantum physics like I'm 5"}]
-  }'
-```
+## Supported Model Clusters
+
+The routing logic dynamically maps queries to one of the following clusters based on real-time analysis:
+
+| Cluster | Intended Workload | Primary Model | Backup Model |
+|---------|-------------------|---------------|--------------|
+| **SOTA** | High-complexity reasoning, creative writing, nuanced instruction following. | Llama 3.3 70B (Groq) | Gemini 1.5 Pro |
+| **Fast Code** | Software engineering, debugging, code generation, refactoring. | DeepSeek Coder V2 | StarCoder2 |
+| **High Performance** | General knowledge questions, summarization, extraction. | Mixtral 8x7B | Llama 3 70B |
+| **Cheap Chat** | Conversational filler, simple definitions, rapid-fire Q&A. | Llama 3 8B | Phi-3 Mini |
 
 ---
 
-## 🤖 Supported Models (Free Tier)
+## Contributing
 
-| Role | Router Cluster | Models Used | Provider |
-|------|----------------|-------------|----------|
-| **SOTA** | Creative, Reasoning | Llama 3.3 70B | Groq |
-| **High Performance** | General Knowledge | Mixtral 8x7B | Groq / HF |
-| **Fast Code** | Programming | DeepSeek Coder V2 | Hugging Face |
-| **Cheap Chat** | Simple Queries | Phi-3, Llama 3 8B | HF / Groq |
-
----
-
-## 🤝 Contributing
-
-We welcome contributions!
-1. Fork the repo.
-2. Create a branch (`git checkout -b feature/amazing`).
-3. Commit changes (`git commit -m 'Add amazing feature'`).
-4. Push to branch (`git push origin feature/amazing`).
-5. Open a Pull Request.
-
-## 📄 License
-
-MIT License. See `LICENSE` for details.
+We welcome contributions to improve the routing logic or add new providers. Please verify any changes against the test suite before submitting a pull request.
