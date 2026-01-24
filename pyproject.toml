@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sbscr-router"
+version = "5.0.0"
+description = "Enterprise LLM Router"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "requests",
+    "torch",
+    "transformers",
+    "xgboost",
+    "datasketch",
+    "mmh3"
+]
