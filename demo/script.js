@@ -150,6 +150,18 @@ async function handleSendMessage() {
     addLog(`Engine: Analyzing intent for stream...`);
     showThinking();
 
+    // Construct conversation history for context awareness
+    let messagesPayload = [];
+    const currentSession = state.history.find(h => h.id === state.currentChatId);
+
+    if (currentSession) {
+        // Deep copy existing messages to avoid mutation issues
+        messagesPayload = currentSession.messages.map(m => ({ role: m.role, content: m.content }));
+    }
+
+    // Append current user query
+    messagesPayload.push({ role: 'user', content: query });
+
     try {
         const t0 = performance.now();
         const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
@@ -157,7 +169,7 @@ async function handleSendMessage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: 'sbscr-auto',
-                messages: [{ role: 'user', content: query }],
+                messages: messagesPayload,
                 temperature: state.settings.temperature,
                 max_tokens: state.settings.maxTokens
             })
@@ -226,14 +238,43 @@ function renderHistory() {
     dom.history.innerHTML = '<label class="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] px-5 mb-4 block">Archive</label>';
     state.history.forEach(item => {
         const btn = document.createElement('div');
-        btn.className = `history-item w-full flex items-center gap-3 px-5 py-3 rounded-xl hover:bg-white/5 cursor-pointer text-sm font-medium transition-all ${state.currentChatId === item.id ? 'active' : 'text-slate-400'}`;
+        btn.className = `history-item group w-full flex items-center justify-between px-5 py-3 rounded-xl hover:bg-white/5 cursor-pointer text-sm font-medium transition-all ${state.currentChatId === item.id ? 'active' : 'text-slate-400'}`;
         btn.innerHTML = `
-            <svg class="w-4 h-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-5 5v-5z" stroke-width="2"/></svg>
-            <span class="truncate">${item.title}</span>
+            <div class="flex items-center gap-3 overflow-hidden">
+                <svg class="w-4 h-4 opacity-40 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-5 5v-5z" stroke-width="2"/></svg>
+                <span class="truncate">${item.title}</span>
+            </div>
+            <button class="delete-btn opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity p-1" title="Delete Session">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
         `;
+
         btn.onclick = () => loadHistorySession(item.id);
+
+        // Handle Delete
+        const deleteBtn = btn.querySelector('.delete-btn');
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteChat(item.id);
+        };
+
         dom.history.appendChild(btn);
     });
+}
+
+function deleteChat(id) {
+    state.history = state.history.filter(h => h.id !== id);
+    localStorage.setItem('sbscr_history_studio', JSON.stringify(state.history));
+
+    // If active chat deleted, clear screen
+    if (state.currentChatId === id) {
+        state.currentChatId = null;
+        dom.messages.innerHTML = '';
+        const welcome = createWelcome();
+        dom.messages.appendChild(welcome);
+    }
+    renderHistory();
+    addLog(`Studio: Session [${id}] deleted.`);
 }
 
 function loadHistorySession(id) {
