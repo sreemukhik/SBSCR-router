@@ -27,16 +27,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Components
-router = SBSCRRouter()
-providers = ProviderRegistry()
+# Initialize Components (Lazy Load for fast container startup)
+router = None
+providers = None
 
-try:
-    providers.register(GroqProvider())
-    providers.register(HuggingFaceProvider())
-    providers.register(GoogleProvider())
-except Exception as e:
-    print(f"Warning: Provider init failed: {e}")
+@app.on_event("startup")
+async def startup_event():
+    global router, providers
+    print(f"INFO Startup: Initializing SBSCR Enterprise Router components...")
+    
+    # Initialize Provider Registry
+    providers = ProviderRegistry()
+    try:
+        providers.register(GroqProvider())
+        providers.register(HuggingFaceProvider())
+        providers.register(GoogleProvider())
+        print("INFO Startup: Providers registered successfully.")
+    except Exception as e:
+        print(f"WARN Startup: Provider init failed: {e}")
+
+    # Initialize Router (Heavy ML Load)
+    try:
+        print("INFO Startup: Loading ML Models (XGBoost/LSH)...")
+        router = SBSCRRouter()
+        print("INFO Startup: Router initialized successfully.")
+    except Exception as e:
+        print(f"CRITICAL Startup: Router failed to load: {e}")
+        # Initialize a fallback/dummy router if strict needed, or let it fail
 
 # Optimized model mapping for Sub-Second response
 MODEL_MAP = {
