@@ -28,20 +28,23 @@ app.add_middleware(
 )
 
 # Initialize Components (Lazy Load for fast container startup)
+import asyncio
+
 router = None
 providers = None
+is_loading = True
 
-@app.on_event("startup")
-async def startup_event():
-    global router, providers
-    print(f"INFO Startup: Initializing SBSCR Enterprise Router components...")
+async def initialize_heavy_components():
+    global router, providers, is_loading
+    print(f"INFO Startup: Starting background initialization...")
     
     # Initialize Provider Registry
-    providers = ProviderRegistry()
     try:
-        providers.register(GroqProvider())
-        providers.register(HuggingFaceProvider())
-        providers.register(GoogleProvider())
+        temp_providers = ProviderRegistry()
+        temp_providers.register(GroqProvider())
+        temp_providers.register(HuggingFaceProvider())
+        temp_providers.register(GoogleProvider())
+        providers = temp_providers
         print("INFO Startup: Providers registered successfully.")
     except Exception as e:
         print(f"WARN Startup: Provider init failed: {e}")
@@ -49,11 +52,21 @@ async def startup_event():
     # Initialize Router (Heavy ML Load)
     try:
         print("INFO Startup: Loading ML Models (XGBoost/LSH)...")
+        # Simulate small delay if needed or real heavy load
         router = SBSCRRouter()
         print("INFO Startup: Router initialized successfully.")
     except Exception as e:
         print(f"CRITICAL Startup: Router failed to load: {e}")
-        # Initialize a fallback/dummy router if strict needed, or let it fail
+    
+    is_loading = False
+    print("INFO Startup: Initialization Complete.")
+
+@app.on_event("startup")
+async def startup_event():
+    # Helper to check if we are in a cloud (Render) environment
+    # or just local. In both cases, background loading is safer.
+    asyncio.create_task(initialize_heavy_components())
+    print("INFO Startup: Server is compliant and ready to bind port.")
 
 # Optimized model mapping for Sub-Second response
 MODEL_MAP = {
@@ -110,7 +123,10 @@ def upload_file(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"PDF Parsing Error: {str(e)}")
 
 @app.post("/v1/chat/completions")
-def chat_completions(request: ChatCompletionRequest):
+async def chat_completions(request: ChatCompletionRequest):
+    if is_loading:
+        raise HTTPException(503, "Server is still initializing ML models. Please retry in 30 seconds.")
+        
     if not request.messages:
         raise HTTPException(400, "No messages provided")
     
@@ -118,7 +134,16 @@ def chat_completions(request: ChatCompletionRequest):
     
     # Step 1: Route using Enterprise Router (Detailed)
     start = time.time()
-    routing_result = router.route_detailed(query)
+    try:
+        if router: 
+            routing_result = router.route_detailed(query)
+        else:
+            # Emergency router unavailable fallback
+            raise Exception("Router instance is None")
+    except Exception as e:
+        print(f"Router error: {e}, falling back to default")
+        routing_result = {"model": "sbscr-sota", "metrics": {"error": str(e)}}
+        
     selected_model = routing_result["model"]
     routing_metrics = routing_result["metrics"]
     routing_latency = (time.time() - start) * 1000
@@ -131,6 +156,9 @@ def chat_completions(request: ChatCompletionRequest):
         inference_start = time.time()
         messages_dict = [{"role": m.role, "content": m.content} for m in request.messages]
         
+        if not providers:
+             raise HTTPException(503, "Providers not initialized")
+             
         response = providers.call(
             provider_model,
             messages_dict,
@@ -209,18 +237,7 @@ def chat_completions(request: ChatCompletionRequest):
 @app.get("/health")
 async def health():
     return {
-        "status": "ok",
-        "available_models": providers.list_available_models(),
-        "providers": {
-            "groq": os.getenv("GROQ_API_KEY") is not None,
-            "huggingface": os.getenv("HF_TOKEN") is not None,
-            "google": os.getenv("GOOGLE_API_KEY") is not None
-        }
+        "status": "loading" if is_loading else "ok",
+        "providers_loaded": providers is not None,
+        "router_loaded": router is not None
     }
-
-if __name__ == "__main__":
-    print("-" * 30)
-    print("SBSCR ENTERPRISE ROUTER READY")
-    print(f"Port 8000 | Keys: {'OK' if all([os.getenv('GROQ_API_KEY'), os.getenv('HF_TOKEN'), os.getenv('GOOGLE_API_KEY')]) else 'INCOMPLETE'}")
-    print("-" * 30)
-    uvicorn.run(app, host="0.0.0.0", port=8005)
