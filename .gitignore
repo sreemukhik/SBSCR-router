@@ -49,3 +49,5 @@ end_to_end_results.json
 *.obj
 
 .env
+
+!vercel.json
