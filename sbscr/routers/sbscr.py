@@ -18,20 +18,20 @@ class SBSCRRouter:
                  registry_path: str = "data/models.yaml",
                  model_path: str = "sbscr/models/complexity_xgboost.json"):
         
-        print("🚀 Initializing Enterprise Router v5 (Hybrid Semantic)...")
+        print("INFO Initializing Enterprise Router v5 (Hybrid Semantic)...")
         
         # 1. Load Registry
         self.registry = ModelRegistry(registry_path)
-        print(f"📚 Loaded {len(self.registry.models)} models from registry.")
+        print(f"INFO Loaded {len(self.registry.models)} models from registry.")
         
         # 2. Load XGBoost Model
         self.model = xgb.XGBRegressor()
         if os.path.exists(model_path):
             self.model.load_model(model_path)
-            print("🧠 Loaded XGBoost Complexity Scorer.")
+            print("INFO Loaded XGBoost Complexity Scorer.")
             self.has_model = True
         else:
-            print(f"⚠️ Model not found at {model_path}. Router will strictly fallback to heuristics.")
+            print(f"WARN Model not found at {model_path}. Router will strictly fallback to heuristics.")
             self.has_model = False
             
         # 3. Feature Extractors
@@ -44,33 +44,103 @@ class SBSCRRouter:
     def route(self, query: str) -> str:
         """
         Route query to optimal model name.
-        Returns the single best model (Top 1).
-        Wrapper around route_with_fallbacks.
         """
-        candidates = self.route_with_fallbacks(query)
-        return candidates[0] if candidates else self.registry.get_best_model(ModelCluster.CHEAP_CHAT)
+        result = self.route_detailed(query)
+        return result["model"]
 
-    def route_with_fallbacks(self, query: str) -> list[str]:
+    def route_detailed(self, query: str) -> dict:
+        """
+        Route query and return THE selection plus the routing metadata (Calculations).
+        """
+        # 1. Capture internal metrics
+        metrics = {}
+        
+        # 2. Intent Classification
+        intent = "general"
+        intent_conf = 0.0
+        
+        # Fast Path Layer (Pattern Match)
+        query_strip = query.lower().strip()
+        code_markers = ["def ", "class ", "import ", "from ", "return", " -> ", "print(", "```", "{", "}", "    "]
+        conv_markers = ["hi", "hello", "hey", "how are you", "thanks", "thank you", "bye", "good morning", "good evening"]
+        
+        if any(w in query for w in code_markers):
+            intent = "coding"
+            intent_conf = 1.0
+            metrics["routing_path"] = "Fast Path (Code Pattern)"
+        elif query_strip in conv_markers or len(query_strip.split()) <= 2:
+            intent = "general"
+            intent_conf = 1.0
+            metrics["routing_path"] = "Fast Path (Conversational)"
+        else:
+            # Slow Path: Transformer
+            intent, intent_conf = self.intent_classifier.classify(query)
+            metrics["routing_path"] = "Semantic Path (Transformer)"
+            
+        metrics["detected_intent"] = intent
+        metrics["intent_confidence"] = round(intent_conf, 3)
+
+        # 3. Features & Complexity
+        features = self.extractor.extract_features(query)
+        metrics["complexity_features"] = {
+            "tokens": features.get('word_count', 0),
+            "code_density": round(features.get('code_density', 0), 3),
+            "unique_ratio": round(features.get('unique_word_ratio', 0), 3)
+        }
+        
+        # XGBoost Score
+        score = 0.5
+        if self.has_model:
+            # Reconstruct vector for XGBoost (must match training)
+            feat_vec = [
+                features.get('word_count', 0),
+                features.get('unique_word_ratio', 0),
+                features.get('avg_word_length', 0),
+                features.get('max_line_length', 0),
+                features.get('code_density', 0),
+                1 if features.get('is_code', False) else 0,
+                0.0, # sig_mean placeholder
+                features.get('ast_node_proxy', 0),
+                features.get('import_count', 0)
+            ]
+            preds = self.model.predict(np.array([feat_vec]))
+            score = float(preds[0])
+        
+        metrics["complexity_score"] = round(score, 3)
+        metrics["reasoning_effort"] = "High" if score > 0.7 else "Medium" if score > 0.3 else "Low"
+
+        # 4. Selection (Existing logic simplified for readability here)
+        candidates = self.route_with_fallbacks(query, intent=intent, intent_conf=intent_conf)
+        selected = candidates[0] if candidates else self.registry.get_best_model(ModelCluster.CHEAP_CHAT)
+        
+        return {
+            "model": selected,
+            "metrics": metrics
+        }
+
+    def route_with_fallbacks(self, query: str, intent: str = None, intent_conf: float = None) -> list[str]:
         """
         Route query and return a prioritized list of candidates for retry/fallback.
-        Order: [Primary Model, Cluster Backup, SOTA Safety Net]
         """
         
         # 1. Safety & Fast Path (optional, keep simple for now)
         if not query or len(query.strip()) == 0:
             return [self.registry.get_best_model(ModelCluster.CHEAP_CHAT)]
 
-        # 2. Semantic Intent Classification (Cascade Optimization)
-        # Fast Path: Check for obvious coding cues to save ~25ms
-        intent = "general"
-        intent_conf = 0.0
-        
-        if any(w in query for w in ["def ", "class ", "import ", "from ", "return", " -> ", "print(", "```", "{", "}", "    "]):
-            intent = "coding"
-            intent_conf = 1.0
-        else:
-            # Slow Path: Zero-Shot Transformer
-            intent, intent_conf = self.intent_classifier.classify(query)
+        # Reuse intent if provided to avoid redundant slow classification
+        if intent is None or intent_conf is None:
+            query_strip = query.lower().strip()
+            code_markers = ["def ", "class ", "import ", "from ", "return", " -> ", "print(", "```", "{", "}", "    "]
+            conv_markers = ["hi", "hello", "hey", "how are you", "thanks", "thank you", "bye", "good morning", "good evening"]
+            
+            if any(w in query for w in code_markers):
+                intent = "coding"
+                intent_conf = 1.0
+            elif query_strip in conv_markers or len(query_strip.split()) <= 2:
+                intent = "general"
+                intent_conf = 1.0
+            else:
+                intent, intent_conf = self.intent_classifier.classify(query)
             
         # 3. Feature Extraction (Must match training exactly)
         features = self.extractor.extract_features(query)
@@ -119,7 +189,7 @@ class SBSCRRouter:
         if intent in ['creative', 'reasoning'] and intent_conf > 0.4:
             if score > 0.15: # Was 0.7. Lowered because XGBoost underestimates "Reasoning" complexity.
                  target_cluster = ModelCluster.SOTA
-                 target_fallback = "gpt-4-turbo"
+                 target_fallback = "sbscr-sota"
             else:
                  target_cluster = ModelCluster.HIGH_PERF
                  target_fallback = "llama-3-70b"
@@ -128,7 +198,7 @@ class SBSCRRouter:
         elif intent == 'coding':
             if score > 0.75:
                 target_cluster = ModelCluster.SOTA
-                target_fallback = "gpt-4-turbo"
+                target_fallback = "sbscr-sota"
             elif score > 0.3:
                 target_cluster = ModelCluster.FAST_CODE
                 target_fallback = "deepseek-coder-v2"
@@ -141,7 +211,7 @@ class SBSCRRouter:
             # Boost Math significantly to avoid 0% accuracy
             if score > 0.15: # Was 0.4. Lowered significantly for GSM8K.
                  target_cluster = ModelCluster.SOTA
-                 target_fallback = "gpt-4-turbo"
+                 target_fallback = "sbscr-sota"
             else:
                  target_cluster = ModelCluster.HIGH_PERF
                  target_fallback = "llama-3-70b"
@@ -150,7 +220,7 @@ class SBSCRRouter:
         else:
             if score > 0.85:
                 target_cluster = ModelCluster.SOTA
-                target_fallback = "gpt-4-turbo"
+                target_fallback = "sbscr-sota"
             elif score > 0.6:
                 target_cluster = ModelCluster.HIGH_PERF
                 target_fallback = "llama-3-70b"
@@ -174,7 +244,7 @@ class SBSCRRouter:
         
         # 3. Reliability Safety Net
         # Always append a high-availability model (SOTA) at the end if not present
-        safety_net = "gpt-4-turbo" # Or gemini-1.5-pro
+        safety_net = "sbscr-sota" # Or gemini-1.5-pro
         
         final_list = []
         if candidates:

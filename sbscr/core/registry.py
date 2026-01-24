@@ -39,7 +39,7 @@ class ModelRegistry:
     def load_registry(self):
         """Load model definitions from YAML."""
         if not os.path.exists(self.config_path):
-            print(f"⚠️ Registry not found at {self.config_path}. Using empty registry.")
+            print(f"WARN Registry not found at {self.config_path}. Using empty registry.")
             return
 
         with open(self.config_path, 'r') as f:

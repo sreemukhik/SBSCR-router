@@ -1,5 +1,9 @@
-from transformers import pipeline
-import torch
+try:
+    from transformers import pipeline
+    import torch
+    TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    TRANSFORMERS_AVAILABLE = False
 import time
 
 class IntentClassifier:
@@ -8,7 +12,12 @@ class IntentClassifier:
         Initializes the Zero-Shot Intent Classifier.
         Using distilbart-mnli-12-1 for speed/accuracy balance.
         """
-        print(f"🧠 Loading Intent Classifier: {model_name}...")
+        if not TRANSFORMERS_AVAILABLE:
+            print("WARN Warning: transformers/torch not available. Intent classification will be disabled.")
+            self.classifier = None
+            return
+
+        print(f"INFO Loading Intent Classifier: {model_name}...")
         start = time.time()
         
         # Check for CUDA
@@ -22,12 +31,15 @@ class IntentClassifier:
         )
         self.labels = ["coding", "math", "creative", "reasoning", "general"]
         
-        print(f"✅ Intent Classifier loaded in {time.time() - start:.2f}s (Device: {'GPU' if device==0 else 'CPU'})")
+        print(f"INFO Intent Classifier loaded in {time.time() - start:.2f}s (Device: {'GPU' if device==0 else 'CPU'})")
 
     def classify(self, text: str) -> str:
         """
         Classifies the intent of the text into one of the predefined labels.
         """
+        if not self.classifier:
+            return "general", 1.0
+
         start = time.time()
         result = self.classifier(text, self.labels)
         intent = result['labels'][0]

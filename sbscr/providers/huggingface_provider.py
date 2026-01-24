@@ -17,8 +17,8 @@ class HuggingFaceProvider(BaseProvider):
     def __init__(self):
         super().__init__()
         self.name = "huggingface"
-        self.api_key = os.getenv("HF_TOKEN")
-        self.base_url_template = "https://api-inference.huggingface.co/models/{}"
+        self.api_key = os.getenv("HF_TOKEN").strip() if os.getenv("HF_TOKEN") else None
+        self.base_url = "https://router.huggingface.co/v1/chat/completions"
         
         # Define available free serverless models
         # Note: Availability depends on model loading status on HF servers
@@ -76,37 +76,16 @@ class HuggingFaceProvider(BaseProvider):
         if not self.api_key:
             raise ValueError("HF_TOKEN not set. Get free token: https://huggingface.co/settings/tokens")
         
-        url = self.base_url_template.format(model_id)
-        
-        # Construct prompt based on model type or use raw messages if model supports chat template
-        # HF Inference API for chat models usually accepts "inputs" as a string with templates
-        # But some newer ones support simple payload. We will use the standard HF API format.
-        
-        # Simplified chat template application (very basic, ideally use tokenizer.apply_chat_template)
-        # For simplicity in this lightweight provider, we construct a basic prompt string
-        prompt = ""
-        for msg in messages:
-            role = msg["role"]
-            content = msg["content"]
-            if role == "system":
-                prompt += f"<|system|>\n{content}\n"
-            elif role == "user":
-                prompt += f"<|user|>\n{content}\n"
-            elif role == "assistant":
-                prompt += f"<|assistant|>\n{content}\n"
-        prompt += "<|assistant|>\n"
-
         payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": max_tokens,
-                "temperature": temperature,
-                "return_full_text": False
-            }
+            "model": model_id,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": False
         }
         
         response = requests.post(
-            url,
+            self.base_url,
             headers={"Authorization": f"Bearer {self.api_key}"},
             json=payload,
             timeout=120
@@ -119,6 +98,7 @@ class HuggingFaceProvider(BaseProvider):
             raise Exception(f"Hugging Face API error: {response.status_code} - {response.text}")
         
         result = response.json()
-        if isinstance(result, list) and len(result) > 0:
-            return result[0].get("generated_text", "")
-        return str(result)
+        try:
+            return result["choices"][0]["message"]["content"]
+        except (KeyError, IndexError):
+            return str(result)

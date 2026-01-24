@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBSCR | Routing Studio v5.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="bg-[#05060b] text-slate-300 font-['Inter'] h-screen flex overflow-hidden">
+
+    <!-- Sidebar: Session History -->
+    <aside class="w-[280px] bg-[#0a0c14] border-r border-white/5 flex flex-col h-full z-20 transition-all duration-300">
+        <div class="p-8 flex items-center gap-3">
+            <div
+                class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-[1.5px] shadow-[0_4px_20px_rgba(99,102,241,0.2)]">
+                <div class="w-full h-full bg-[#0a0c14] rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+                        <path d="M2 17L12 22L22 17" />
+                        <path d="M2 12L12 17L22 12" />
+                    </svg>
+                </div>
+            </div>
+            <span class="text-lg font-bold text-white tracking-tight font-['Outfit']">SBSCR <span
+                    class="text-indigo-500">ROUTER</span></span>
+        </div>
+
+        <div class="px-4 mb-4">
+            <button id="new-chat-btn"
+                class="w-full group flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-indigo-500/30 hover:bg-white/[0.05] transition-all duration-300">
+                <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor"
+                    stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4" />
+                </svg>
+                <span class="text-sm font-semibold text-slate-400 group-hover:text-white">New Routing Session</span>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2 space-y-1" id="history-container">
+            <label
+                class="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] px-5 mb-4 block">Archive</label>
+            <!-- History Items Injected -->
+        </div>
+
+        <div class="p-6 border-t border-white/5">
+            <div class="flex items-center gap-4 px-2">
+                <div
+                    class="w-10 h-10 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-bold text-white shadow-lg">
+                    SK</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-white truncate">Sreemukhi Kunche</p>
+                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Enterprise Cluster</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col relative bg-[#05060b] overflow-hidden">
+
+        <!-- Workspace Header -->
+        <header
+            class="h-16 flex items-center justify-between px-10 border-b border-white/5 backdrop-blur-3xl z-10 shrink-0">
+            <div class="flex items-center gap-4">
+                <div
+                    class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10">
+                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest leading-none">CORE:
+                        ACTIVE</span>
+                </div>
+                <div class="h-4 w-[1px] bg-white/5"></div>
+                <span id="current-model-display"
+                    class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cascade Engine v5.1</span>
+            </div>
+
+            <button id="settings-btn"
+                class="p-2.5 hover:bg-white/5 rounded-xl transition-all text-slate-500 hover:text-white">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- Message Core -->
+        <div id="scroll-container" class="flex-1 overflow-y-auto px-8 py-10 scroll-smooth">
+            <div id="messagesContainer" class="max-w-[800px] mx-auto flex flex-col gap-10">
+                <!-- Empty State -->
+                <div class="welcome-center text-center pt-24 space-y-8 animate-in">
+                    <div
+                        class="inline-block px-4 py-2 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 text-xs font-bold text-indigo-400 uppercase tracking-widest">
+                        Intelligence Routing Node</div>
+                    <h1 class="text-5xl font-bold text-white tracking-tighter font-['Outfit']">How can I route your
+                        <br><span
+                            class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">Intelligence
+                            session?</span>
+                    </h1>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left max-w-2xl mx-auto pt-4">
+                        <button onclick="fillExample('Audit this code cluster for performance leaks')"
+                            class="p-5 rounded-[24px] bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-indigo-500/50 transition-all group">
+                            <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-1">Audit Mode
+                            </p>
+                            <p class="text-sm font-medium text-slate-400 group-hover:text-white transition-colors">Route
+                                for code complexity...</p>
+                        </button>
+                        <button onclick="fillExample('Summarize architectural tradeoffs of ZK-Rollups')"
+                            class="p-5 rounded-[24px] bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-purple-500/50 transition-all group">
+                            <p class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1">Reasoning
+                                Mode</p>
+                            <p class="text-sm font-medium text-slate-400 group-hover:text-white transition-colors">Route
+                                for high-dimension logic...</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom buffer -->
+            <div class="h-48 shrink-0"></div>
+        </div>
+
+        <!-- Heavy Input Block (Solid, Non-Transparent) -->
+        <div class="input-portal">
+            <div class="input-container">
+                <form id="chat-form">
+                    <textarea id="userInput" placeholder="Ask anything to the routing engine..." rows="1"></textarea>
+
+                    <div class="input-actions font-['Inter']">
+                        <div class="input-actions-left">
+                            <button type="button" class="btn-icon btn-utility" id="btn-upload" title="Ingest Context">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path
+                                        d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                                </svg>
+                            </button>
+                            <input type="file" id="fileInput" style="display: none;">
+                            <span id="charCount" class="char-count">0 / 2000</span>
+                        </div>
+                        <button type="submit" class="btn-icon btn-send" id="sendButton">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="3">
+                                <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <p class="text-[10px] text-slate-700 text-center font-bold uppercase tracking-[0.4em] mt-5">Sub-Second
+                Intelligent Contextual Routing</p>
+        </div>
+    </main>
+
+    <!-- Intelligence Control Plane (Right) -->
+    <aside
+        class="w-[340px] bg-[#0a0c14] border-l border-white/5 flex flex-col p-8 gap-10 overflow-y-auto hidden lg:flex">
+        <div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Decision Intelligence</h3>
+            <div class="space-y-4">
+                <div class="bg-white/[0.02] border border-white/5 p-5 rounded-3xl">
+                    <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest block mb-2">Model
+                        Target</span>
+                    <span id="metric-model"
+                        class="text-xl font-bold text-white font-['Outfit'] tracking-tight">STANDBY</span>
+                </div>
+                <div class="bg-white/[0.02] border border-white/5 p-5 rounded-3xl">
+                    <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest block mb-2">Intent
+                        Detection</span>
+                    <span id="trace-intent"
+                        class="text-xl font-bold text-indigo-400 font-mono tracking-tight">AWAITING</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">System Path Trace</h3>
+            <div
+                class="bg-white/[0.02] border border-white/5 p-6 rounded-3xl min-h-[160px] flex flex-col items-center justify-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-full border border-indigo-500/30 flex items-center justify-center text-indigo-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5l10-5l-10-5zM2 17l10 5l10-5M2 12l10 5l10-5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <p class="text-sm font-bold text-white" id="trace-intent">Awaiting Sync</p>
+                    <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Calculated Intent</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Infrastructure Logs</h3>
+            <div class="bg-black/40 border border-white/5 p-5 rounded-3xl h-[280px] overflow-hidden">
+                <div id="log-container"
+                    class="font-['JetBrains_Mono'] text-[10px] space-y-2 leading-relaxed h-full overflow-y-auto pr-2 custom-scroll">
+                    <div class="text-emerald-500/80">> Engine Initialized v5.1</div>
+                    <div class="text-slate-600">> Protocol: Secure-WS Ready</div>
+                    <div class="text-slate-600">> Standby for user stream...</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Pro Engine Configuration (Modal) -->
+    <div id="settings-modal"
+        class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-2xl hidden">
+        <div
+            class="w-full max-w-xl bg-[#0a0c14] border border-white/10 rounded-[40px] p-12 shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+            <div class="flex items-center justify-between mb-12">
+                <div>
+                    <h3 class="text-2xl font-bold text-white font-['Outfit']">System Parameters</h3>
+                    <p class="text-slate-500 text-sm font-medium">Fine-tune the routing core thresholds.</p>
+                </div>
+                <button id="close-settings" class="p-3 hover:bg-white/5 rounded-2xl transition-all"><svg class="w-6 h-6"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path d="M6 18L18 6M6 6l12 12" />
+                    </svg></button>
+            </div>
+
+            <div class="space-y-10 mb-12">
+                <div class="space-y-4">
+                    <div
+                        class="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                        <label>Router Temperature</label>
+                        <span id="val-temp" class="text-indigo-400 font-mono">0.7</span>
+                    </div>
+                    <input type="range" id="input-temp"
+                        class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer"
+                        min="0" max="1" step="0.1" value="0.7">
+                </div>
+                <div class="space-y-4">
+                    <div
+                        class="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                        <label>Token Ceiling</label>
+                        <span id="val-tokens" class="text-indigo-400 font-mono">1000</span>
+                    </div>
+                    <input type="range" id="input-tokens"
+                        class="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer"
+                        min="256" max="8192" step="128" value="1000">
+                </div>
+            </div>
+
+            <button id="save-settings"
+                class="w-full bg-white text-black font-bold h-16 rounded-[24px] hover:bg-slate-200 transition-all text-sm tracking-tight shadow-xl">Apply
+                System Synchronization</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

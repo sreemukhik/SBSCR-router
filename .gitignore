@@ -26,7 +26,7 @@ venv/
 .venv/
 
 # Environment Variables (Keep keys secret!)
-.env
+# .env
 .env.local
 
 # IDEs
@@ -47,3 +47,5 @@ end_to_end_results.json
 *.dll
 *.exe
 *.obj
+
+.env

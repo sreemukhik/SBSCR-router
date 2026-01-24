@@ -1,0 +1,276 @@
+/* SBSCR Enterprise Studio Core Engine */
+
+@keyframes entry {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.99);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes flash {
+    0% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.5;
+    }
+}
+
+.animate-in {
+    animation: entry 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.pulse {
+    animation: flash 2s infinite;
+}
+
+/* Global Scrollbar Refining */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    /* Gives it some breathing room */
+    background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Hide scrollbars in sidebars unless hovered for a cleaner look */
+aside.sidebar:not(:hover) .history-list::-webkit-scrollbar-thumb,
+aside.metrics-panel:not(:hover) ::-webkit-scrollbar-thumb {
+    background-color: transparent;
+}
+
+/* Message Layering */
+.msg-user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 28px;
+    padding: 1.5rem 2rem;
+    max-width: 85%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.msg-ai {
+    align-self: flex-start;
+    background-color: transparent;
+    padding: 1.5rem 0;
+    width: 100%;
+    color: #cbd5e1;
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+/* Markdown Support */
+.msg-ai pre {
+    background: #020308 !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 24px !important;
+    padding: 2rem !important;
+    margin: 2rem 0 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    overflow-x: auto;
+}
+
+.msg-ai code {
+    font-family: 'JetBrains Mono', monospace !important;
+    color: #818cf8 !important;
+    font-size: 0.85em;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+@keyframes dot-bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+
+.thinking-bubble {
+    display: flex;
+    gap: 6px;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    width: fit-content;
+    margin-top: 10px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background: #6366f1;
+    border-radius: 50%;
+    animation: dot-bounce 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.history-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-item.active {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    color: #6366f1;
+}
+
+/* Input Engineering - HARD LOCKED FIXED SIZE */
+.input-portal {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px !important;
+    z-index: 50;
+    pointer-events: auto;
+}
+
+.input-container {
+    width: 700px !important;
+    height: 120px !important;
+    background: #0d101a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+#chat-form {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+.input-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-top: auto;
+    /* Push to bottom */
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.input-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none !important;
+    color: white;
+    padding: 4px 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none !important;
+    /* Force disable resize */
+    height: 60px !important;
+    /* Fixed height! */
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+textarea::-webkit-scrollbar {
+    display: none;
+}
+
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    flex-shrink: 0;
+}
+
+.btn-utility {
+    background: transparent;
+    color: #64748b;
+}
+
+.btn-utility:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.btn-send {
+    background: white;
+    color: black;
+}
+
+.btn-send:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.btn-send:active {
+    transform: scale(0.95);
+}
+
+.btn-send:disabled {
+    background: #1e1e2e;
+    color: #4b5563;
+    cursor: default;
+    transform: none;
+}
+
+.char-count {
+    font-size: 10px;
+    font-weight: 600;
+    color: #475569;
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 8px;
+}
