@@ -18,3 +18,8 @@ dependencies = [
     "datasketch",
     "mmh3"
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sbscr*"]
+namespaces = false
