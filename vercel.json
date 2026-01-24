@@ -1,23 +1,12 @@
 {
-    "version": 2,
-    "builds": [
+    "rewrites": [
         {
-            "src": "serve.py",
-            "use": "@vercel/python"
+            "source": "/v1/(.*)",
+            "destination": "/serve.py"
         },
         {
-            "src": "demo/**",
-            "use": "@vercel/static"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/v1/(.*)",
-            "dest": "serve.py"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/demo/$1"
+            "source": "/(.*)",
+            "destination": "/demo/$1"
         }
     ]
 }
