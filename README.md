@@ -12,7 +12,7 @@ This system is built for developers and enterprises who need a scalable, model-a
 
 > **⚠️ Note on Free Tier:** This deployment runs on Render's Free Tier. If the service is unused for 15 minutes, it will spin down. Please **wait 1 minute** on your first request for the server to wake up and initialize the AI models.
 
-## 🖥️ Web UI
+## Web UI
 
 This repository now includes a **built-in Dark Mode Chat UI** for testing and interaction.
 *   **Zero Setup**: Just visit the root URL.
