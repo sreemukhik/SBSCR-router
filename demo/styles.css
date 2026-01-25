@@ -155,19 +155,20 @@ aside.metrics-panel:not(:hover) ::-webkit-scrollbar-thumb {
     color: #6366f1;
 }
 
-/* Input Engineering - HARD LOCKED FIXED SIZE */
+/* Input Engineering - RESPONSIVE */
 .input-portal {
     position: absolute;
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    width: 700px !important;
+    width: 95% !important;
+    max-width: 700px !important;
     z-index: 50;
     pointer-events: auto;
 }
 
 .input-container {
-    width: 700px !important;
+    width: 100% !important;
     height: 120px !important;
     background: #0d101a;
     border: 1px solid rgba(255, 255, 255, 0.15);
