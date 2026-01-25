@@ -6,7 +6,7 @@ This system is built for developers and enterprises who need a scalable, model-a
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
 **Access the live Enterprise Router here:** 👉 [https://sbscr-router.onrender.com](https://sbscr-router.onrender.com)
 
