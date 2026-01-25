@@ -15,7 +15,8 @@
 <body class="bg-[#05060b] text-slate-300 font-['Inter'] h-screen flex overflow-hidden">
 
     <!-- Sidebar: Session History -->
-    <aside class="w-[280px] bg-[#0a0c14] border-r border-white/5 flex flex-col h-full z-20 transition-all duration-300">
+    <aside
+        class="w-[280px] bg-[#0a0c14] border-r border-white/5 hidden md:flex flex-col h-full z-20 transition-all duration-300">
         <div class="p-8 flex items-center gap-3">
             <div
                 class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-[1.5px] shadow-[0_4px_20px_rgba(99,102,241,0.2)]">
@@ -67,7 +68,7 @@
 
         <!-- Workspace Header -->
         <header
-            class="h-16 flex items-center justify-between px-10 border-b border-white/5 backdrop-blur-3xl z-10 shrink-0">
+            class="h-16 flex items-center justify-between px-4 md:px-10 border-b border-white/5 backdrop-blur-3xl z-10 shrink-0">
             <div class="flex items-center gap-4">
                 <div
                     class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10">
