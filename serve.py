@@ -8,12 +8,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from sbscr.routers.sbscr import SBSCRRouter
-from sbscr.providers.base import ProviderRegistry
-from sbscr.providers.groq_provider import GroqProvider
-from sbscr.providers.huggingface_provider import HuggingFaceProvider
-from sbscr.providers.google_provider import GoogleProvider
-
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="SBSCR Enterprise Router (Multi-Provider)")
@@ -38,6 +32,13 @@ async def initialize_heavy_components():
     global router, providers, is_loading
     print(f"INFO Startup: Starting background initialization...")
     
+    # Lazy imports to save memory/startup time
+    from sbscr.routers.sbscr import SBSCRRouter
+    from sbscr.providers.base import ProviderRegistry
+    from sbscr.providers.groq_provider import GroqProvider
+    from sbscr.providers.huggingface_provider import HuggingFaceProvider
+    from sbscr.providers.google_provider import GoogleProvider
+
     # Initialize Provider Registry
     try:
         temp_providers = ProviderRegistry()

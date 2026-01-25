@@ -1,9 +1,4 @@
-try:
-    from transformers import pipeline
-    import torch
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
+import os
 import time
 
 class IntentClassifier:
@@ -12,26 +7,34 @@ class IntentClassifier:
         Initializes the Zero-Shot Intent Classifier.
         Using distilbart-mnli-12-1 for speed/accuracy balance.
         """
-        if not TRANSFORMERS_AVAILABLE:
-            print("WARN Warning: transformers/torch not available. Intent classification will be disabled.")
+        # Check for Render or Low Memory environment
+        if os.getenv("RENDER") or os.getenv("DISABLE_HEAVY_MODELS"):
+            print("INFO Render/Low-Mem detected: Skipping local Intent Classifier (Transformers) to prevent OOM.")
             self.classifier = None
             return
 
-        print(f"INFO Loading Intent Classifier: {model_name}...")
-        start = time.time()
-        
-        # Check for CUDA
-        device = 0 if torch.cuda.is_available() else -1
-        self.device = device
-        
-        self.classifier = pipeline(
-            "zero-shot-classification", 
-            model=model_name, 
-            device=device
-        )
-        self.labels = ["coding", "math", "creative", "reasoning", "general"]
-        
-        print(f"INFO Intent Classifier loaded in {time.time() - start:.2f}s (Device: {'GPU' if device==0 else 'CPU'})")
+        try:
+            from transformers import pipeline
+            import torch
+            print(f"INFO Loading Intent Classifier: {model_name}...")
+            start = time.time()
+            
+            # Check for CUDA
+            device = 0 if torch.cuda.is_available() else -1
+            self.device = device
+            
+            self.classifier = pipeline(
+                "zero-shot-classification", 
+                model=model_name, 
+                device=device
+            )
+            self.labels = ["coding", "math", "creative", "reasoning", "general"]
+            
+            print(f"INFO Intent Classifier loaded in {time.time() - start:.2f}s (Device: {'GPU' if device==0 else 'CPU'})")
+
+        except ImportError as e:
+            print(f"WARN Warning: transformers/torch not available ({e}). Intent classification will be disabled.")
+            self.classifier = None
 
     def classify(self, text: str) -> str:
         """

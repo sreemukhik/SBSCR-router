@@ -6,13 +6,8 @@ Gemini models with generous free tier.
 
 import os
 from typing import List, Dict
+import warnings
 from sbscr.providers.base import BaseProvider, ProviderModel
-
-try:
-    import google.generativeai as genai
-    GENAI_AVAILABLE = True
-except ImportError:
-    GENAI_AVAILABLE = False
 
 
 class GoogleProvider(BaseProvider):
@@ -22,9 +17,18 @@ class GoogleProvider(BaseProvider):
         super().__init__()
         self.name = "google"
         self.api_key = os.getenv("GOOGLE_API_KEY")
+        self.genai = None
         
-        if self.api_key and GENAI_AVAILABLE:
-            genai.configure(api_key=self.api_key)
+        if self.api_key:
+            try:
+                # Suppress FutureWarning from google.generativeai
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore") 
+                    import google.generativeai as genai
+                self.genai = genai
+                self.genai.configure(api_key=self.api_key)
+            except ImportError:
+                self.genai = None
         
         # Define available models
         self.models = {
@@ -50,17 +54,17 @@ class GoogleProvider(BaseProvider):
         }
     
     def is_available(self) -> bool:
-        return self.api_key is not None and GENAI_AVAILABLE
+        return self.api_key is not None and self.genai is not None
     
     def call(self, model_id: str, messages: List[Dict], max_tokens: int, temperature: float) -> str:
         if not self.api_key:
             raise ValueError("GOOGLE_API_KEY not set. Get free: https://makersuite.google.com/")
-        if not GENAI_AVAILABLE:
+        if not self.genai:
             raise ValueError("google-generativeai not installed. Run: pip install google-generativeai")
         
         # Convert messages to Gemini format
         # Gemini uses a different format than OpenAI
-        model = genai.GenerativeModel(model_id)
+        model = self.genai.GenerativeModel(model_id)
         
         # Build conversation history
         chat_history = []
@@ -74,7 +78,7 @@ class GoogleProvider(BaseProvider):
         # Send final message
         response = chat.send_message(
             messages[-1]["content"],
-            generation_config=genai.types.GenerationConfig(
+            generation_config=self.genai.types.GenerationConfig(
                 max_output_tokens=max_tokens,
                 temperature=temperature
             )
