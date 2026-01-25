@@ -12,6 +12,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
+app = FastAPI(title="SBSCR Enterprise Router (Multi-Provider)")
+
+# Add CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mount the demo directory to serve static assets (CSS, JS)
 app.mount("/demo", StaticFiles(directory="demo"), name="demo")
 
