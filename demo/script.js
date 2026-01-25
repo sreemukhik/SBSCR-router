@@ -1,6 +1,6 @@
 // SBSCR Enterprise Studio - Logic Engine v5.1
 
-const API_BASE_URL = 'http://localhost:8005';
+const API_BASE_URL = '';
 
 const state = {
     settings: {
