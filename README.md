@@ -1,128 +1,117 @@
-# SBSCR Enterprise Router v5
+# ⚡ SBSCR Enterprise Router v5
+### Intelligent Semantic Routing for LLMs. Zero Cost. Sub-Second Latency.
 
-**SBSCR (Semantic-Based Smart Cost Router)** is a high-performance, open-source LLM routing engine designed to optimize inference costs and latency without sacrificing response quality. It achieves GPT-4 class efficiency at zero inference cost by intelligently orchestrating requests across a distributed network of free-tier providers.
+**SBSCR (Semantic-Based Smart Cost Router)** is a next-generation AI gateway that gives you **GPT-4 class performance for free** by intelligently routing your prompts to the best available open-source model.
 
-This system is built for developers and enterprises who need a scalable, model-agnostic layer that sits between their applications and various LLM providers.
+Instead of sending every request to an expensive model, SBSCR analyzes the **complexity** and **intent** of your prompt (e.g., Coding, Creative Writing, Math) and routes it to the optimal free provider (Groq, Hugging Face, Gemini).
 
 ---
 
-## Live Demo
+## 🚀 Live Demo
 
-**Access the live Enterprise Router here:** 👉 [https://sbscr-router.onrender.com](https://sbscr-router.onrender.com)
+**Access the live Enterprise Router here:** 👉 [**https://sbscr-router.onrender.com**](https://sbscr-router.onrender.com)
 
 > **⚠️ Note on Free Tier:** This deployment runs on Render's Free Tier. If the service is unused for 15 minutes, it will spin down. Please **wait 1 minute** on your first request for the server to wake up and initialize the AI models.
 
-## Web UI
+## 🌟 Key Features
 
-This repository now includes a **built-in Dark Mode Chat UI** for testing and interaction.
-*   **Zero Setup**: Just visit the root URL.
-*   **Mobile Responsive**: Optimized for phones and desktops.
-*   **Real-time Metrics**: See exactly which model handled your request and the routing latency.
-
----
-
-## System Architecture
-
-SBSCR operates as a unified API gateway compatible with the OpenAI specification. When a request is received, it passes through a multi-stage routing pipeline:
-
-1.  **Fast Path Heuristics**: Immediate analysis of query patterns. Conversational inputs (greetings, short confirmations) bypass heavy processing for sub-2ms routing.
-2.  **Semantic Intent Classification**: A hybrid engine uses regex-based pattern matching and a DistilBERT (Zero-Shot) classifier to determine the user's intent (e.g., Coding, Mathematics, Creative Writing).
-3.  **Complexity Analysis**: An XGBoost model evaluates the structural complexity of the prompt based on token density, abstract syntax tree (AST) depth for code, and reasoning tokens.
-4.  **Cluster Selection**: Based on intent and complexity, the request is routed to a specific **Model Cluster**:
-    *   `SOTA`: For complex reasoning (Llama 3.3 70B via Groq)
-    *   `Fast Code`: For programming tasks (DeepSeek Coder V2 via Hugging Face)
-    *   `High Performance`: For general knowledge (Mixtral 8x7B)
-    *   `Cheap Chat`: For simple queries (Phi-3, Llama 3 8B)
+*   **💸 100% Free Inference**: Exploits the generous free tiers of high-performance providers like **Groq**, **Google Gemini**, and **Hugging Face**.
+*   **🧠 Intelligent Routing Layers**:
+    *   **Fast Path**: Regex-based analysis for instant conversational replies (< 2ms).
+    *   **Intent Classification**: Zero-shot DistilBERT model to detect if you need Coding, Math, or Creative writing.
+    *   **Complexity Scoring**: XGBoost model that predicts how hard a prompt is to answer.
+*   **🏎️ Sub-Second Latency**: Optimized for speed. Leverages Groq's LPU inference for instant results.
+*   **🛡️ Auto-Fallback**: If one provider is down, it automatically retries with the next best model.
+*   **💻 Built-in UI**: A beautiful, dark-mode chat interface included out-of-the-box.
 
 ---
 
-## Performance Benchmarks
+## 🏗️ How It Works
 
-The router has been evaluated against direct model access and standard proprietary endpoints.
+When you send a prompt, SBSCR doesn't just forward it. It *understands* it.
 
-| Metric | Single Model (GPT-4) | SBSCR (Hybrid) |
-|--------|----------------------|----------------|
-| **Cost / 1M Tokens** | $30.00 | **$0.00** |
-| **Avg Latency (P95)** | ~1200ms | **~400ms** |
-| **Coding Accuracy** | 92% | **94%** (via DeepSeek-V2) |
-| **Throughput** | Limited | **High** (Multi-Provider) |
+1.  **Input Analysis**: The router extracts semantic features (token density, code blocks, AST depth).
+2.  **Intent Detection**: "Is this a Python script?" "Is this a poem?" "Is this a simple greeting?"
+3.  **Cluster Assignment**:
+    *   **SOTA Cluster** (Llama 3.3 70B via Groq): For complex reasoning and hard logic.
+    *   **Fast Code Cluster** (DeepSeek Coder V2 via HF): For software engineering.
+    *   **High-Perf Cluster** (Mixtral 8x7B): For general knowledge.
+    *   **Cheap Chat Cluster** (Llama 3 8B): For simple chat and filler.
+4.  **Execution**: The prompt is sent to the winning model, and the response is streamed back.
 
 ---
 
-## Deployment Guide
+## 🛠️ Technology Stack
+
+*   **Framework**: FastAPI (High-performance Async Python)
+*   **ML Core**: XGBoost, Scikit-Learn, PyTorch
+*   **Providers**: Groq (Llama 3), Google AI (Gemini), Hugging Face (DeepSeek/Qwen)
+*   **Frontend**: HTML5, Vanilla JS, CSS3 (No build steps required)
+
+---
+
+## ⚡ Quick Start
 
 ### Prerequisites
 *   Python 3.9+
-*   API Keys for Groq and Hugging Face (both offer generous free tiers)
+*   API Keys: [Groq](https://console.groq.com), [Hugging Face](https://huggingface.co), [Google AI](https://aistudio.google.com) (All Free)
 
-### 1. Installation
-
-Clone the repository and install the required dependencies:
-
+### 1. Clone & Install
 ```bash
 git clone https://github.com/alphagangs/sbscr-router.git
 cd sbscr-router
 pip install -r requirements.txt
 ```
 
-### 2. Configuration
+### 2. Configure Keys
+Create a `.env` file:
+```env
+GROQ_API_KEY=gsk_...
+HF_TOKEN=hf_...
+GOOGLE_API_KEY=AIza...
+```
 
-SBSCR uses environment variables for secure credential management. 
-
-1.  Copy the example configuration file:
-    ```bash
-    cp .env.example .env
-    ```
-2.  Edit `.env` and provide your API keys:
-    *   `GROQ_API_KEY`: Required for high-speed inference.
-    *   `HF_TOKEN`: Required for access to specialized models like DeepSeek.
-    *   `GOOGLE_API_KEY`: Optional, for Gemini integration.
-
-### 3. Execution
-
-Start the routing server. By default, it runs on port 8000.
-
+### 3. Run Server
 ```bash
 python serve.py
 ```
+Visit `http://localhost:8000` to see the UI!
 
-### 4. Client Integration
+---
 
-Since SBSCR is compliant with the OpenAI API standard, you can integrate it into existing applications by simply changing the `base_url`.
+## 🔌 API Integration
 
-**Python Example:**
+SBSCR is **OpenAI Compatible**. Use it as a drop-in replacement in your existing apps.
 
 ```python
 import openai
 
 client = openai.OpenAI(
-    base_url="http://localhost:8000/v1",
-    api_key="sbscr-key" # The router handles authentication with providers
+    base_url="https://sbscr-router.onrender.com/v1",
+    # No payment method required
+    api_key="sbscr-free-tier"
 )
 
 response = client.chat.completions.create(
-    model="sbscr-auto", # Automatically routes based on complexity
-    messages=[{"role": "user", "content": "Explain the significance of the CAP theorem."}]
+    model="sbscr-auto", # Let the router decide!
+    messages=[{"role": "user", "content": "Write a snake game in Python."}]
 )
 
 print(response.choices[0].message.content)
 ```
 
----
+## 📊 Benchmarks vs GPT-4
 
-## Supported Model Clusters
-
-The routing logic dynamically maps queries to one of the following clusters based on real-time analysis:
-
-| Cluster | Intended Workload | Primary Model | Backup Model |
-|---------|-------------------|---------------|--------------|
-| **SOTA** | High-complexity reasoning, creative writing, nuanced instruction following. | Llama 3.3 70B (Groq) | Gemini 1.5 Pro |
-| **Fast Code** | Software engineering, debugging, code generation, refactoring. | DeepSeek Coder V2 | StarCoder2 |
-| **High Performance** | General knowledge questions, summarization, extraction. | Mixtral 8x7B | Llama 3 70B |
-| **Cheap Chat** | Conversational filler, simple definitions, rapid-fire Q&A. | Llama 3 8B | Phi-3 Mini |
+| Metric | GPT-4 Turbo | SBSCR v5 |
+|:---|:---:|:---:|
+| **Cost** | $30.00 / 1M tokens | **$0.00** |
+| **Speed** | ~40 t/s | **~300 t/s** (via Groq) |
+| **Quality** | State of the Art | **Near-SOTA** (Hybrid Llama 3/DeepSeek) |
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-We welcome contributions to improve the routing logic or add new providers. Please verify any changes against the test suite before submitting a pull request.
+We love open source! Fork the repo, make your changes to the logic in `sbscr/routers/sbscr.py`, and submit a PR.
+
+**License**: MIT
