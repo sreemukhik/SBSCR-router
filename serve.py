@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 app = FastAPI(title="SBSCR Enterprise Router (Multi-Provider)")
 
@@ -20,6 +21,140 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SBSCR Router Playground</title>
+        <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0f172a; color: #e2e8f0; max-width: 900px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+            h1 { text-align: center; background: linear-gradient(to right, #60a5fa, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+            #chat-container { flex: 1; overflow-y: auto; border: 1px solid #334155; border-radius: 12px; padding: 20px; background: #1e293b; display: flex; flex-direction: column; gap: 15px; }
+            .message { padding: 12px 16px; border-radius: 12px; max-width: 80%; line-height: 1.5; }
+            .user { background: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+            .assistant { background: #334155; color: #f1f5f9; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #475569; }
+            .meta { font-size: 0.75rem; color: #94a3b8; margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+            .badge { background: #0f172a; padding: 2px 8px; border-radius: 4px; border: 1px solid #334155; }
+            .input-group { margin-top: 20px; display: flex; gap: 10px; }
+            input { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 1rem; outline: none; transition: border-color 0.2s; }
+            input:focus { border-color: #60a5fa; }
+            button { padding: 0 24px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: background 0.2s; }
+            button:hover { background: #1d4ed8; }
+            button:disabled { background: #475569; cursor: not-allowed; }
+            code { background: #0f172a; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+            pre { background: #0f172a; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; }
+        </style>
+    </head>
+    <body onload="document.getElementById('user-input').focus()">
+        <h1>SBSCR Enterprise Router</h1>
+        <div id="chat-container">
+            <div class="message assistant">
+                Hello! I am the <b>SBSCR Router</b> (v5).<br><br>
+                I automatically route your prompts to the best open-source model (Llama 3, Qwen, DeepSeek, etc.) based on complexity and intent.<br><br>
+                Try asking me a coding question or a logic puzzle!
+            </div>
+        </div>
+        <div class="input-group">
+            <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off">
+            <button id="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+
+        <script>
+            const input = document.getElementById('user-input');
+            const chatContainer = document.getElementById('chat-container');
+            const sendBtn = document.getElementById('send-btn');
+
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && !sendBtn.disabled) {
+                    sendMessage();
+                }
+            });
+
+            async function sendMessage() {
+                const text = input.value.trim();
+                if (!text) return;
+
+                // Add User Message
+                addMessage(text, 'user');
+                input.value = '';
+                setLoading(true);
+
+                try {
+                    const start = Date.now();
+                    const response = await fetch('/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            messages: [{ role: "user", content: text }],
+                            model: "sbscr-auto"
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error.message || "Unknown error");
+                    if (!data.choices) throw new Error("Invalid response format");
+
+                    const reply = data.choices[0].message.content;
+                    const meta = {
+                        model: data.model,
+                        latency: data.usage.total_latency_ms,
+                        provider_model: data.usage.provider_model
+                    };
+                    
+                    addMessage(reply, 'assistant', meta);
+                } catch (e) {
+                    addMessage("Error: " + e.message, 'assistant');
+                } finally {
+                    setLoading(false);
+                    // Re-focus input for speed (removed for mobile usability)
+                    // input.focus(); 
+                }
+            }
+
+            function addMessage(text, role, meta = null) {
+                const div = document.createElement('div');
+                div.className = `message ${role}`;
+                
+                // Simple markdown-like formatting
+                let formatted = text
+                    .replace(/</g, "&lt;").replace(/>/g, "&gt;") // Escape HTML
+                    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>') // Code blocks
+                    .replace(/`([^`]+)`/g, '<code>$1</code>') // Inline code
+                    .replace(/\\n/g, '<br>'); // Newlines
+
+                div.innerHTML = formatted;
+
+                if (meta) {
+                    const metaDiv = document.createElement('div');
+                    metaDiv.className = 'meta';
+                    metaDiv.innerHTML = `
+                        <span class="badge">🤖 ${meta.model}</span>
+                        <span class="badge">⚡ ${meta.latency}ms</span>
+                        <span style="opacity:0.6">via ${meta.provider_model}</span>
+                    `;
+                    div.appendChild(metaDiv);
+                }
+
+                chatContainer.appendChild(div);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function setLoading(isLoading) {
+                sendBtn.disabled = isLoading;
+                sendBtn.innerText = isLoading ? '...' : 'Send';
+                input.disabled = isLoading;
+                if (!isLoading) input.focus();
+            }
+        </script>
+    </body>
+    </html>
+    """
 
 # Initialize Components (Lazy Load for fast container startup)
 import asyncio
