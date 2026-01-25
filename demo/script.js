@@ -1,6 +1,6 @@
 // SBSCR Enterprise Studio - Logic Engine v5.1
 
-const API_BASE_URL = '';
+const API_BASE_URL = 'https://sbscr-router.onrender.com';
 
 const state = {
     settings: {
