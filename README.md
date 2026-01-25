@@ -6,6 +6,21 @@ This system is built for developers and enterprises who need a scalable, model-a
 
 ---
 
+## 🚀 Live Demo
+
+**Access the live Enterprise Router here:** 👉 [https://sbscr-router.onrender.com](https://sbscr-router.onrender.com)
+
+> **⚠️ Note on Free Tier:** This deployment runs on Render's Free Tier. If the service is unused for 15 minutes, it will spin down. Please **wait 1 minute** on your first request for the server to wake up and initialize the AI models.
+
+## 🖥️ Web UI
+
+This repository now includes a **built-in Dark Mode Chat UI** for testing and interaction.
+*   **Zero Setup**: Just visit the root URL.
+*   **Mobile Responsive**: Optimized for phones and desktops.
+*   **Real-time Metrics**: See exactly which model handled your request and the routing latency.
+
+---
+
 ## System Architecture
 
 SBSCR operates as a unified API gateway compatible with the OpenAI specification. When a request is received, it passes through a multi-stage routing pipeline:
