@@ -64,6 +64,19 @@ async def initialize_heavy_components():
 
 @app.on_event("startup")
 async def startup_event():
+    print("\n" + "="*60)
+    print("🏢 SBSCR ENTERPRISE ROUTER - 100% FREE TIER")
+    print("="*60)
+    print("\n📊 Model Output Mapping:")
+    print("   - Claude Sonnet  -> Groq: Llama 3.1 70B")
+    print("   - GPT-4 Turbo    -> HF: Qwen 2.5 72B")
+    print("   - DeepSeek Coder -> HF: DeepSeek V2 Lite")
+    print("\n🔑 Required API Keys (FREE):")
+    print(f"   GROQ_API_KEY: {'✅ Set' if os.getenv('GROQ_API_KEY') else '❌ Missing'}")
+    print(f"   HF_TOKEN:     {'✅ Set' if os.getenv('HF_TOKEN') else '❌ Missing'}")
+    print(f"   GOOGLE_API_KEY:{'✅ Set' if os.getenv('GOOGLE_API_KEY') else '❌ Missing'}")
+    print("="*60 + "\n")
+    
     # Helper to check if we are in a cloud (Render) environment
     # or just local. In both cases, background loading is safer.
     asyncio.create_task(initialize_heavy_components())
