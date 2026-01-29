@@ -220,7 +220,7 @@ function appendMessage(role, content, usage = null) {
         const footer = document.createElement('div');
         footer.className = 'msg-footer';
 
-        const model = usage.routing_decision || 'Standard';
+        const model = usage.routing_decision || usage.model || 'Standard';
         const latency = usage.routing_latency_ms || 0;
 
         // Safe access to metrics
