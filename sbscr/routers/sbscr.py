@@ -103,7 +103,7 @@ class SBSCRRouter:
                 features.get('code_density', 0),
                 1 if features.get('is_code', False) else 0,
                 0.0, # sig_mean placeholder
-                features.get('ast_node_proxy', 0),
+                features.get('ast_depth', 0),
                 features.get('import_count', 0)
             ]
             preds = self.model.predict(np.array([feat_vec]))

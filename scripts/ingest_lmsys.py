@@ -1,7 +1,9 @@
 import pandas as pd
-from datasets import load_dataset
-import os
-import sys
+# Optional import
+try:
+    from datasets import load_dataset
+except ImportError:
+    load_dataset = None
 
 from dotenv import load_dotenv
 import os
