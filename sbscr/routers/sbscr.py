@@ -135,8 +135,12 @@ class SBSCRRouter:
             # ... (Logic duplicated from route_detailed, using local var to keep this method standalone or refactored)
             # For brevity in this patch, we assume Intent matches route_detailed logic roughly or re-run simple checks
             query_strip = query.lower().strip()
-            # Basic re-check if not provided
-            if "python" in query_strip or "code" in query_strip: 
+            # Basic re-check if not provided - using same markers as route_detailed
+            code_markers = [
+                "def ", "class ", "import ", "from ", "return", " -> ", "print(", "```", "{", "}", "    ",
+                "python", "script", "code", "function", "algorithm", "js", "javascript", "html", "css", "sql", "react"
+            ]
+            if any(w in query_strip for w in code_markers): 
                 intent = "coding"
             else:
                 intent = "general" # Fallback if not injected
