@@ -235,4 +235,3 @@ Open an issue or check out:
 
 ---
 
-Built by [@sreemukhik](https://github.com/sreemukhik) | Star the repo if this saved you money 💸
