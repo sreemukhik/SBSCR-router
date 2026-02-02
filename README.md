@@ -196,10 +196,11 @@ Results saved to `data/mt_bench/model_answer/sbscr-auto.jsonl`
 
 ## Deployment
 
-**Render (free tier):**
-- Repo already includes `render.yaml`
-- Just connect your GitHub and deploy
-- Auto-scales on free tier
+**Vercel (recommended):**
+- Repo already includes `vercel.json`
+- Connect your GitHub repo to Vercel
+- Add environment variables in Vercel dashboard
+- Auto-deploys on every push to main
 
 **Docker:**
 ```bash
