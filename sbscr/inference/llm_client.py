@@ -29,6 +29,7 @@ class LLMClient:
             'deepseek-coder': 'ollama',
             'gemini-1.5-pro': 'gemini',
             'gemini-pro': 'gemini',
+            'gemini-flash-latest': 'gemini',
         }
     
     def infer(self, model: str, prompt: str, **kwargs) -> Dict[str, Any]:
@@ -200,7 +201,7 @@ class GeminiClient:
     
     def __init__(self):
         """Initialize Gemini client."""
-        self.api_key = os.getenv('GEMINI_API_KEY')
+        self.api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
         self._client = None
     
     def _get_client(self):
@@ -209,7 +210,7 @@ class GeminiClient:
             import google.generativeai as genai
             if self.api_key:
                 genai.configure(api_key=self.api_key)
-                self._client = genai.GenerativeModel('gemini-1.5-pro')
+                self._client = genai.GenerativeModel('gemini-flash-latest')
         return self._client
     
     def infer(self, model: str, prompt: str, **kwargs) -> Dict[str, Any]:

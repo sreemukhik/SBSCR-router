@@ -3,6 +3,7 @@ import numpy as np
 import xgboost as xgb
 import os
 import sys
+import json
 
 # Ensure path is set (for when running as script)
 sys.path.append(os.getcwd())
@@ -14,17 +15,29 @@ from sbscr.core.lsh import LSHSignatureGenerator
 def train_xgboost_scorer():
     print("🚀 Starting Enterprise Scorer Training...")
     
-    # Try 1M file first, then fallback to 50k
-    data_path = "data/lmsys/processed_lmsys_1m.csv"
-    if not os.path.exists(data_path):
-        data_path = "data/lmsys/processed_lmsys_50k.csv"
-        
-    if not os.path.exists(data_path):
-        print("❌ Data file not found.")
+    
+    # 1. Load Data
+    # Priority: Calibrated Dataset (Golden) > LMSYS Processed (Weak Labels)
+    calibrated_path = "data/calibrated_dataset.json"
+    weak_path = "data/lmsys/processed_lmsys_1m.csv"
+    
+    dataset_type = "weak"
+    if os.path.exists(calibrated_path):
+        print(f"💎 Found Calibrated Dataset at {calibrated_path}. Using as Golden Truth.")
+        with open(calibrated_path, 'r') as f:
+            raw_data = json.load(f)
+        df = pd.DataFrame([
+            {'prompt': item['query'], 'score_truth': item['golden_score']} 
+            for item in raw_data
+        ])
+        dataset_type = "golden"
+    elif os.path.exists(weak_path):
+        df = pd.read_csv(weak_path)
+    else:
+        print("❌ No data file found (checked calibrated_dataset.json and lmsys csv).")
         return
         
-    df = pd.read_csv(data_path)
-    print(f"📊 Loaded {len(df)} samples.")
+    print(f"📊 Loaded {len(df)} samples ({dataset_type} mode).")
     
     # Full 1M Training Mode
     # df = df.sample(n=100000, random_state=42) # Uncomment for fast debugging

@@ -31,7 +31,7 @@ def ingest_lmsys():
         print("✅ Dataset stream opened successfully!")
         
         extracted_data = []
-        print("⚙️  Processing conversations (Target: 1,000,000)...")
+        print("⚙️  Processing conversations (Target: 2,000)...")
         
         # Stream process to avoid RAM OOM
         for i, row in enumerate(dataset):
@@ -44,31 +44,27 @@ def ingest_lmsys():
                 prompt = conv[0]['content']
                 
                 extracted_data.append({
-                    'prompt': prompt,
-                    'source': 'lmsys_1m',
-                    'score_truth': 0.5 # Placeholder
+                    'query': prompt,
+                    'domain': 'general'
                 })
                 
-                if (i + 1) % 50000 == 0:
+                if (i + 1) % 500 == 0:
                     print(f"  Processed {i + 1} rows...")
                     
-                # For this demo environment, cap at 100k to ensure we finish in reasonable time?
-                # User asked for "Train with 1M". I will try to get as many as possible.
-                # Let's verify file size. 1M text rows is ~500MB CSV. That's fine.
-                
-                if i >= 1000000:
+                if len(extracted_data) >= 2000:
                     break
                     
             except Exception as e:
                 continue
         
-        print(f"📊 Converting {len(extracted_data)} rows to DataFrame...")
-        new_df = pd.DataFrame(extracted_data)
+        print(f"📊 Converting {len(extracted_data)} rows to JSON...")
         
-        os.makedirs("data/lmsys", exist_ok=True)
-        output_path = "data/lmsys/processed_lmsys_1m.csv"
-        new_df.to_csv(output_path, index=False)
-        print(f"💾 Saved {len(new_df)} processed samples to {output_path}")
+        os.makedirs("data", exist_ok=True)
+        output_path = "data/prompts_to_calibrate.json"
+        with open(output_path, 'w') as f:
+            import json
+            json.dump(extracted_data, f, indent=2)
+        print(f"💾 Saved {len(extracted_data)} prompts to {output_path}")
 
 
     except Exception as e:

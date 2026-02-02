@@ -12,13 +12,25 @@ class SBSCRRouter:
     """
     Enterprise Structural Router (v5).
     Uses XGBoost complexity scoring + Dynamic Registry for model selection.
-    Now with Semantic Intent Layer (Zero-Shot).
+    Now with Semantic Intent Layer (Zero-Shot) and LSH Signature Mapping.
     """
     def __init__(self, 
                  registry_path: str = "data/models.yaml",
-                 model_path: str = "sbscr/models/complexity_xgboost.json"):
+                 model_path: str = "sbscr/models/complexity_xgboost.json",
+                 signature_map_path: str = "data/signatures_map.json"):
         
         print("INFO Initializing Enterprise Router v5 (Hybrid Semantic)...")
+        
+        # 0. Signature Map (Fast Path)
+        self.signature_map_path = signature_map_path
+        self.signature_map = {}
+        if os.path.exists(signature_map_path):
+            try:
+                with open(signature_map_path, 'r') as f:
+                    self.signature_map = json.load(f)
+                print(f"INFO Loaded {len(self.signature_map)} signature mappings.")
+            except Exception as e:
+                print(f"WARN Failed to load signature map: {e}")
         
         # 1. Load Registry
         self.registry = ModelRegistry(registry_path)
@@ -55,6 +67,19 @@ class SBSCRRouter:
         # 1. Capture internal metrics
         metrics = {}
         
+        # 0. Signature Match Layer (INSTANT PATH)
+        bucket_id = self.lsh.get_bucket_id(query, num_buckets=1000)
+        bucket_key = str(bucket_id)
+        if bucket_key in self.signature_map:
+            target_model = self.signature_map[bucket_key]
+            metrics["routing_path"] = f"LSH Signature Path (Bucket {bucket_key})"
+            metrics["detected_intent"] = "cached"
+            metrics["complexity_score"] = 0.0 # Bypassed
+            return {
+                "model": target_model,
+                "metrics": metrics
+            }
+
         # 2. Intent Classification
         intent = "general"
         intent_conf = 0.0
@@ -265,6 +290,44 @@ class SBSCRRouter:
         """Legacy helper, now deprecated but kept for compatibility."""
         chain = self._get_fallback_chain(cluster, fallback, min_ctx)
         return chain[0]
+
+    def teach_from_dataset(self, calibrated_data_path: str):
+        """
+        Teach the router by mapping LSH buckets to Golden Labels from Gemini.
+        """
+        import json
+        if not os.path.exists(calibrated_data_path):
+            print(f"❌ Error: {calibrated_data_path} not found.")
+            return
+
+        with open(calibrated_data_path, 'r') as f:
+            data = json.load(f)
+
+        print(f"🎓 Teaching {len(data)} associations to LSH Map...")
+        
+        for item in data:
+            query = item['query']
+            analysis = item.get('gemini_analysis', {})
+            difficulty = analysis.get('difficulty_score', 5)
+            
+            # Map difficulty to Model Name or Cluster-Default
+            if difficulty >= 8:
+                target_model = "sbscr-sota"
+            elif difficulty >= 5:
+                target_model = "llama-3-70b"
+            else:
+                target_model = "phi-3-mini"
+            
+            # Use 1000 buckets for higher resolution in the cache
+            bucket_id = self.lsh.get_bucket_id(query, num_buckets=1000)
+            self.signature_map[str(bucket_id)] = target_model
+
+        # Save map
+        os.makedirs(os.path.dirname(self.signature_map_path), exist_ok=True)
+        with open(self.signature_map_path, 'w') as f:
+            json.dump(self.signature_map, f, indent=2)
+            
+        print(f"✅ Saved Signature Map with {len(self.signature_map)} buckets.")
 
 if __name__ == "__main__":
     # verification
