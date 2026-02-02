@@ -16,9 +16,7 @@ Result? **8.9/10 on MT-Bench** (GPT-4 scores ~9.0) at **$0 cost**.
 
 ## Live Demo
 
-Try it yourself: **[https://sbscr-router.onrender.com](https://sbscr-router.onrender.com)**
-
-> ⚠️ Hosted on free tier—first request takes ~60 seconds to wake up the server
+Try it yourself: **[https://frontend-seven-eta-98.vercel.app/](https://frontend-seven-eta-98.vercel.app/)**
 
 ## How It Works
 
